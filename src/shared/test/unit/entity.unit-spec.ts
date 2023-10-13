@@ -1,7 +1,7 @@
 import { validate as isUUIDvalidate } from 'uuid';
 import { generateUUID } from "../../../adapter/gateways/uuid/uuid-manager";
 import { userDataBuilder } from '../../../core/entity/test/helper/user-data-builder';
-import UserData from "../../../core/entity/userdata.interface";
+import { UserData } from "../../../core/entity/userdata.interface";
 import { Entity } from "../../entity";
 type StubData = {
   name: string
