@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "jest --passWithNoTests --runInBand --noStackTrace",
+    "test:int": "jest  --passWithNoTests --runInBand --noStackTrace --config ./jest.int.config.ts",
     "dev": "tsx watch src/main/server.ts",
     "prepare": "husky install"
   },
