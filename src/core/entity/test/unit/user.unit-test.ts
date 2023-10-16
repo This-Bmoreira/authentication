@@ -1,4 +1,3 @@
-import { validateEmail, validateName, validatePassword } from "../../../../adapter/gateways/validator/validator-manager";
 import { InvalidEmailError } from "../../../error/invalid-email";
 import { InvalidNameError } from "../../../error/invalid-name";
 import { InvalidPasswordError } from "../../../error/invalid-password";
@@ -7,27 +6,15 @@ import { UserData } from "../../userdata.interface";
 import { userDataBuilder } from "../helper/user-data-builder";
 
 
-
-jest.mock('../../../../adapter/gateways/validator/validator-manager')
-const validateNameMock = validateName as jest.Mock
-const validateEmailMock = validateEmail as jest.Mock
-const validatePasswordMock = validatePassword as jest.Mock
-
-
 describe('UserEntity', () => {
-  let userData: UserData
+  let userData: UserData;
 
   beforeEach(() => {
-
-    userData = userDataBuilder({})
-    validateNameMock.mockReturnValue(true)
-    validateEmailMock.mockReturnValue(true)
-    validatePasswordMock.mockReturnValue(true)
-  })
+    userData = userDataBuilder({});
+  });
 
   afterEach(() => {
     jest.clearAllMocks();
-    jest.resetAllMocks()
   });
 
   it('construtor method', () => {
@@ -37,107 +24,119 @@ describe('UserEntity', () => {
     expect(userEntity.props.email).toBe(userData.email);
     expect(userEntity.props.password).toBe(userData.password);
     expect(userEntity.props.createAt).toBeInstanceOf(Date);
-    jest.resetAllMocks()
   });
 
   describe('create', () => {
     test('Should return a valid UserEntity when valid input data is provided', () => {
-      const result = UserEntity.create(userData)
+      const validateNameSpy = jest.spyOn(UserEntity, 'validateName').mockReturnValue(true);
+      const validateEmailSpy = jest.spyOn(UserEntity, 'validateEmail').mockReturnValue(true);
+      const validatePasswordSpy = jest.spyOn(UserEntity, 'validatePassword').mockReturnValue(true);
+
+      const result = UserEntity.create(userData);
       expect(result.isRight()).toBe(true);
-      expect(validateNameMock).toHaveBeenCalledWith(userData.name);
-      expect(validateEmailMock).toHaveBeenCalledWith(userData.email);
-      expect(validatePasswordMock).toHaveBeenCalledWith(userData.password);
-      expect(validateNameMock).toBeCalledTimes(1);
-      expect(validateEmailMock).toBeCalledTimes(1);
-      expect(validatePasswordMock).toBeCalledTimes(1);
-      jest.resetAllMocks()
+
+      expect(validateNameSpy).toHaveBeenCalledWith(userData.name);
+      expect(validateEmailSpy).toHaveBeenCalledWith(userData.email);
+      expect(validatePasswordSpy).toHaveBeenCalledWith(userData.password);
+
+      expect(validateNameSpy).toBeCalledTimes(1);
+      expect(validateEmailSpy).toBeCalledTimes(1);
+      expect(validatePasswordSpy).toBeCalledTimes(1);
     });
   });
 
   describe('updateUser', () => {
-    test('should update the name when valid name is provided', () => {
+    test('should update the name when a valid name is provided', () => {
+      const validateNameSpy = jest.spyOn(UserEntity, 'validateName').mockReturnValue(true);;
       const newName = 'new name';
+
       const result = UserEntity.updateUserWithNewName({
         oldUserData: userData,
         newName,
       });
-      expect(result.isRight()).toBe(true); 
-      expect(result.value).toBe(newName); 
-      expect(validateNameMock).toHaveBeenCalledWith(newName);
-      expect(validateNameMock).toBeCalledTimes(1);
-      jest.resetAllMocks()
+
+      expect(result.isRight()).toBe(true);
+      expect(result.value).toBe(newName);
+      expect(validateNameSpy).toHaveBeenCalledWith(newName);
+      expect(validateNameSpy).toBeCalledTimes(1);
+
+      validateNameSpy.mockRestore()
     });
-    
-    test('should update the password when valid password is provided', () => {
+
+    test('should update the password when a valid password is provided', () => {
+      const validatePasswordSpy = jest.spyOn(UserEntity, 'validatePassword').mockReturnValue(true);
       const newPassword = 'new password';
+
       const result = UserEntity.updateUserWithNewPassword({
         oldUserData: userData,
         newPassword,
       });
       expect(result.isRight()).toBe(true);
       expect(result.value).toBe(newPassword);
-      expect(validatePassword).toHaveBeenCalledWith(newPassword);
-      expect(validatePassword).toBeCalledTimes(1);
-      jest.resetAllMocks()
+      expect(validatePasswordSpy).toHaveBeenCalledWith(newPassword);
+      expect(validatePasswordSpy).toBeCalledTimes(1);
+
+      validatePasswordSpy.mockRestore()
     });
-  })
+  });
 
   describe('invalid data', () => {
-    test('should return InvalidEmailError when password is invalid', () => {
-      validatePasswordMock.mockReturnValue(false)
-      const invalidPasswords = [
-        '',
-        'invalid_password',
-      ];
+    test('should return InvalidPasswordError when the password is invalid', () => {
+      const validatePasswordSpy = jest.spyOn(UserEntity, 'validatePassword').mockReturnValue(false);
+
+      const invalidPasswords = ['', 'invalidPassword'];
+
       invalidPasswords.forEach((password) => {
         const userDataWithInvalidPassword = {
           ...userData,
-          password
+          password,
         };
         const result = UserEntity.create(userDataWithInvalidPassword);
-        expect(validatePassword).toBeCalledWith(password);
+        expect(validatePasswordSpy).toBeCalledWith(password);
         expect(result.isLeft()).toBe(true);
         expect(result.value).toBeInstanceOf(InvalidPasswordError);
       });
-      jest.resetAllMocks()
-    })
 
-    test(`should return InvalidNameError when name is invalid`, () => {
-      validateNameMock.mockReturnValue(false)
-      const invalidNames = [
-        '',
-        'invalid name',
-      ];
+      validatePasswordSpy.mockRestore()
+    });
+
+    test('should return InvalidNameError when the name is invalid', () => {
+      const validateNameSpy = jest.spyOn(UserEntity, 'validateName').mockReturnValue(false);
+
+      const invalidNames = ['', 'invalid name'];
+
       invalidNames.forEach((name) => {
         const userDataWithInvalidName = {
           ...userData,
-          name
+          name,
         };
         const result = UserEntity.create(userDataWithInvalidName);
-        expect(validateName).toBeCalledWith(name);
+        expect(validateNameSpy).toBeCalledWith(name);
         expect(result.isLeft()).toBe(true);
         expect(result.value).toBeInstanceOf(InvalidNameError);
       });
-      jest.resetAllMocks()
-    })
 
-    test('should return InvalidEmailError when email is invalid', () => {
-      validateEmailMock.mockReturnValue(false)
-      const invalidEmails = [
-        'invalid-email@email.com',
-        '',
-      ];
+      validateNameSpy.mockRestore()
+    });
+
+    test('should return InvalidEmailError when the email is invalid', () => {
+      const validateEmailSpy = jest.spyOn(UserEntity, 'validateEmail').mockReturnValue(false);
+
+      const invalidEmails = ['invalid-email@email.com', ''];
+
       invalidEmails.forEach((email) => {
         const userDataWithInvalidName = {
           ...userData,
-          email
+          email,
         };
         const result = UserEntity.create(userDataWithInvalidName);
-        expect(validateEmail).toBeCalledWith(email);
+        console.log(result)
+        expect(validateEmailSpy).toBeCalledWith(email);
         expect(result.isLeft()).toBe(true);
         expect(result.value).toBeInstanceOf(InvalidEmailError);
       });
-      jest.resetAllMocks()
+
+      validateEmailSpy.mockRestore()
     });
-  })
+  });
 });
