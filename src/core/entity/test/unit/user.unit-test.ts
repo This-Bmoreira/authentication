@@ -130,7 +130,6 @@ describe('UserEntity', () => {
           email,
         };
         const result = UserEntity.create(userDataWithInvalidName);
-        console.log(result)
         expect(validateEmailSpy).toBeCalledWith(email);
         expect(result.isLeft()).toBe(true);
         expect(result.value).toBeInstanceOf(InvalidEmailError);
